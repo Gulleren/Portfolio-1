@@ -1,0 +1,181 @@
+---
+title: "Portfolio 1 — Experimental Methods 1 2019"
+author: "Gustav Metzsch"
+date: "30/9/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, include = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(pastecs)
+```
+
+## Portfolio exam - Part 1
+
+#### Write a short data mining report on the CogSci Intro Week Personality Test Data in which you answer the following questions in prose, code and graphs:
+
+First of all, you have to import the personality data. If the dataset is in your working directory, then you can just load it into R. Otherwise you will have to change your working directory.
+
+```{r load_data}
+df <- read.csv("NEW_CogSciPersonalityTest2019.csv")
+
+```
+
+Once you are done loading the data, you can start working on the questions below.
+
+#### Question 1
+
+Who can hold their breath longer on average, those with right or left ocular dominance? Plot the data using ggplot2 to find out. The plots should include error bars (depicting the standard error of the means). Then use the mean() and sd() functions to find mean and standard deviation of the two eye dominance groups.
+
+
+```{r question1}
+library(tidyverse)
+df <- filter(df, ocular_dom== "Left" | ocular_dom=="Right") #Making sure that the "both" option doesn't get into my plot.
+
+
+ggplot(df, aes(x=ocular_dom, y=breath_hold, fill=ocular_dom))+
+  geom_boxplot(width = 0.5) +
+  ggtitle("ocular boxplot") +
+  stat_summary(fun.y = mean, geom = "point", shape = 23, colour = "Black")+
+  geom_errorbar(stat = 'summary', fun.data = mean_se, width = 0.2)+
+  labs(x = "Ocular Dominance", y = "Breath hold")
+
+#Finding mean and standard deviation of people with left and right ocular dominance
+df %>% 
+group_by(ocular_dom) %>% 
+summarise("Mean" = mean(breath_hold), "Standard Deviation"= sd(breath_hold),"n"=n())
+	
+```
+
+judging by the standard error of the means, the standard deviation, the mean and the outlier from the right ocular dominance group i would say that the two results seem very similar.  
+
+!!!!!!!!
+---
+
+#### Question 2
+
+Who likes silence vs. noise best? Males or females? Also in this case you should plot the data using ggplot2 (including error bars), then use the mean() and sd() functions to find mean and standard deviation of the two genders.
+
+```{r question2}
+ggplot(df, aes(x=gender, y=sound_level_pref, fill=gender))+
+  geom_boxplot(width = 0.5) +
+  ggtitle("Sound level preference boxplot") +
+  stat_summary(fun.y = mean, geom = "point", shape = 23, colour = "Black")+
+  geom_errorbar(stat = 'summary', fun.data = mean_se, width = 0.2)+
+  labs(x = "Gender", y = "sound_level_pref")
+
+df %>% 
+  group_by(gender) %>% 
+  summarise("Mean" = mean(sound_level_pref), "Standard Deviation"=sd(sound_level_pref),"N"=n())
+grouped_by_gender <- group_by(df,gender)
+
+```
+as can be seen visually in the boxplot and numerically through the summarise function males and females have aproximately the same mean.
+looking at the boxplot we can see that the box of the males are longer which means that the variables aren't as centered around the mean as they are for females. The data received from the summarise function also aids to this viiew, as the standard deviation is higher for males.
+
+---
+
+#### Question 3
+
+Are the breath_hold data normally distributed? Provide visual and numeric support for your answer.
+
+```{r question3}
+ggplot(df, aes(breath_hold))+
+  geom_histogram(aes(y = ..density..), colour = "black", fill="white")+
+  labs(x = "Breath Hold", y="Density")+ 
+  stat_function(fun = dnorm, args = list
+                (mean = mean(df$breath_hold, na.rm = TRUE), 
+                  sd= sd(df$breath_hold, na.rm = TRUE)),
+                colour = "black", size=1)
+
+
+```
+Visually it is a bit hard to determine whether the data is normally distributed. It seems that there is a slight right skew. With more data it would be a clearer picture as there wouldn't be so many holes in the bars and also according to the central limit theorem it would be more normalized. 
+
+```
+
+
+```{r}
+
+qplot(sample = df$breath_hold) +
+ xlab("Expected values") + ylab("Observed value")+
+  geom_qq_line()
+
+
+```
+The more the data resembles a diagonal line from left bottom to top right, the closer to a normal distribution it is. In this qplot it seems that the distribution is quite similar to a normal distribution.
+The line i have put in is a linear regression that is a representation of the data. 
+
+```{r}
+
+round(pastecs::stat.desc(df$breath_hold, basic = FALSE, norm = TRUE), digits = 2)
+
+```
+
+
+
+Skewness: The closer the value is to 0, the more normally distributed the data is. We have a value of 0.90 wich denotes a moderate skewness. This ties in with the visual evaluation. 
+Kurtosis: The closer the value is to 1, the more normally distributed the data is. 
+We have a value of -0.32 which is significantly far from 1. 
+P-value: Our p-value is 0.04 which means that our data is probably not normally distributed.
+
+---
+
+#### Question 4
+
+Are the Balloon reaction time data (balloon and balloon_balance) normally distributed? Provide visual and numeric support for your answer.
+
+```{r question4}
+ggplot(df, aes(balloon))+
+  geom_histogram(aes(y = ..density..), colour = "black", fill="white")+
+  labs(x = "Balloon tying speed", y="Density")+ 
+  stat_function(fun = dnorm, args = list
+                (mean = mean(df$balloon, na.rm = TRUE), 
+                  sd= sd(df$balloon, na.rm = TRUE)),
+                colour = "black", size=1)
+
+
+qplot(sample = df$balloon) +
+ xlab("Expected values") + ylab("Observed value")+
+  geom_qq_line()
+  
+  
+  
+round(pastecs::stat.desc(df$balloon, basic = FALSE, norm = TRUE), digits = 2)
+
+```
+
+
+Explain your results in plain terms here: 
+
+The histogram and the qq-plot makes me suspect that the data is not normally distributed. 
+the skewness is quite far from 0 and the kurtosis value is very far from 1. This along with the p-value of 0.00 means that the data is not normally distributed. 
+
+---
+
+#### Question 5
+
+Shoe size could tell us something about general body size, which could also be connected to one's ability to hold your breath. In other words we predict that there is a positive relation between shoe size and how long time CogSci students can hold their breath. Try plotting the two sets of data against each other using a scatter plot (hint: both variables are continuous variables). Bonus question: Males and females have different body sizes. Use grouping in your plot to distinguish the relationship between shoe size and holding breath for males and females.
+
+
+```{r question 5}
+df %>% group_by(gender) %>%
+  ggplot(aes(x=shoesize, y=breath_hold,colour=gender))+
+    geom_point()+
+    geom_smooth(method="lm")+
+    ggtitle("Correlation between shoesize and ability to hold breath")+
+    labs(x="Shoe size", y="Breath hold")
+```
+
+Explain your results in plain terms here: 
+
+
+The hypothesis was that bigger feet = bigger body = longer breath hold.
+The confidence interval show us how unprecise the data is. it is therefor very difficult to say anything concrete.
+It seems that there is a correlation between shoesize and length of breath hold for girls in the data.   
+The linear regression which estimates the correlation for guys does not increase as hypothesized. That means that either there is no correlation between shoe size and body size for men or that body size is not as influencial to duration of breath hold as we thought.
+
